@@ -35,6 +35,8 @@ session.setAttribute("role", "ADMIN");
 - 타임아웃: 30분간 요청 없으면 백그라운드 스레드가 정리
 - 서버 재시작: 메모리의 세션 전부 유실 → **분산 환경 문제의 시작점**
 
+<iframe src="../_widgets/session-lifecycle.html" width="100%" height="520" frameborder="0"></iframe>
+
 ## 분산 환경에서의 세션 문제
 
 서버가 여러 대일 때, 사용자가 Pod-1에서 로그인 후 다음 요청이 Pod-2로 가면 세션을 못 찾음 → 로그인이 풀리는 현상.
@@ -58,6 +60,8 @@ session.setAttribute("role", "ADMIN");
 <iframe src="../_widgets/distributed-session-strategies.html" width="100%" height="480" frameborder="0"></iframe>
 
 ## Spring Session + Redis/Valkey
+
+<iframe src="../_widgets/spring-session-redis-internals.html" width="100%" height="480" frameborder="0"></iframe>
 
 ### 핵심 원리
 

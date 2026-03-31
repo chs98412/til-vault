@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>CSRF Attack & Defense</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:720px;margin:0 auto;padding:20px;color:#1a1a1a;background:#fff}h2{font-size:18px;font-weight:600;margin:0 0 16px}.tabs{display:flex;gap:0;margin:0 0 16px;border:1px solid #e5e5e5;border-radius:8px;overflow:hidden}.tab{flex:1;padding:10px 6px;font-size:11px;text-align:center;cursor:pointer;background:#fff;color:#666;border:none}.tab.active{font-weight:600}.tab.t0.active{background:#FCEBEB;color:#791F1F}.tab.t1.active{background:#E1F5EE;color:#085041}.tab.t2.active{background:#E6F1FB;color:#0C447C}.actors{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:0 0 14px}.actor{border:1px solid #e5e5e5;border-radius:12px;padding:10px;min-height:100px;transition:all .3s}.actor.a-v{border-color:#185FA5;background:#E6F1FB}.actor.a-e{border-color:#A32D2D;background:#FCEBEB}.actor.a-b{border-color:#185FA5;background:#E6F1FB}.actor.a-s{border-color:#0F6E56;background:#E1F5EE}.actor-name{font-size:12px;font-weight:600;margin:0 0 4px}.actor-data{font-size:10px;font-family:monospace;color:#666;line-height:1.5;white-space:pre-wrap}.msg-area{border:1px solid #e5e5e5;border-radius:12px;padding:14px;margin:0 0 14px;min-height:60px}.msg-desc{font-size:13px;color:#555;line-height:1.7}.msg-desc.danger{color:#A32D2D;font-weight:500}.msg-desc.safe{color:#085041;font-weight:500}.controls{display:flex;align-items:center;gap:12px}.step-pills{display:flex;gap:6px;flex:1;flex-wrap:wrap}.pill{width:26px;height:26px;border-radius:50%;border:1px solid #ddd;display:flex;align-items:center;justify-content:center;font-size:11px;color:#999;cursor:pointer;background:#fff}.pill.pr{background:#FCEBEB;color:#791F1F;border-color:#A32D2D}.pill.pg{background:#E1F5EE;color:#085041;border-color:#0F6E56}.pill.pb{background:#E6F1FB;color:#0C447C;border-color:#185FA5}.pill.cur{font-weight:700}button{padding:6px 14px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-size:12px}button:disabled{opacity:.3}
+</style></head><body>
+<h2>CSRF Attack & Defense</h2>
+<div class="tabs"><div class="tab t0 active" onclick="sw(0)">Attack (SameSite=None)</div><div class="tab t1" onclick="sw(1)">Defense: SameSite=Lax</div><div class="tab t2" onclick="sw(2)">Defense: CSRF Token</div></div>
+<div class="actors" id="actors"></div>
+<div class="msg-area" id="msg"></div>
+<div class="controls"><div class="step-pills" id="pills"></div><button id="pb" onclick="g(-1)">Prev</button><button id="nb" onclick="g(1)">Next</button></div>
+<script>
+const S=[
+[[["a-v","User","SESSION=user123\nbank.com에 로그인됨"],["","evil.com",""],["a-b","bank.com","SESSION 확인됨"]],"사용자가 bank.com에 로그인된 상태. 세션 쿠키가 SameSite=None.",false,"pr"],
+[[["a-v","User","오 공짜 아이폰?"],["a-e","evil.com",'<form action="bank.com/transfer">\n  to=attacker, amount=1000000\n</form>'],["","bank.com",""]],"사용자가 evil.com 접속. 숨겨진 form이 bank.com으로 POST를 자동 submit!",true,"pr"],
+[[["","User",""],["a-e","evil.com","자동 submit!"],["a-b","bank.com","Cookie: SESSION=user123\n→ 인증된 사용자!\n→ 송금 실행..."]],"SameSite=None이라 cross-site POST에도 쿠키가 붙음! bank.com은 정상 요청으로 판단.",true,"pr"],
+[[["","User",""],["","evil.com",""],["a-e","bank.com","송금 완료: 1,000,000원 → attacker"]],"공격 성공! 사용자는 아무것도 클릭하지 않았는데 돈이 빠져나감.",true,"pr"]
+],[
+[[["a-v","User","SESSION=user123 (Lax)"],["","evil.com",""],["a-b","bank.com","SESSION 확인됨"]],"동일한 상황. 하지만 쿠키가 SameSite=Lax (브라우저 기본값).",false,"pg"],
+[[["","User",""],["a-e","evil.com",'form → bank.com/transfer\n자동 submit!'],["a-s","bank.com","Cookie: 없음!\n→ 미인증 → 거부"]],"SameSite=Lax에서는 cross-site POST에 쿠키를 안 붙임! 브라우저가 차단.",false,"pg"],
+[[["","User",""],["","evil.com",""],["a-s","bank.com","401 Unauthorized\n공격 실패!"]],"공격 실패! SameSite=Lax 하나로 방어 성공.",false,"pg"]
+],[
+[[["a-v","User","송금 페이지 접속"],["","bank.com (form)",'<input type="hidden"\n  name="_csrf"\n  value="tk_9f8x2">'],["a-b","bank.com (server)","CSRF token 발급: tk_9f8x2\n세션에도 저장"]],"bank.com이 form에 hidden CSRF token을 삽입. 서버 세션에도 저장.",false,"pb"],
+[[["a-v","User","정상 송금"],["","bank.com (form)","_csrf=tk_9f8x2 포함"],["a-s","bank.com (server)","SESSION 확인 ✓\nCSRF token 일치 ✓\n→ 정상 처리"]],"정상 사용자는 bank.com의 form을 통해 요청하므로 CSRF token이 함께 전송됨.",false,"pb"],
+[[["","User",""],["a-e","evil.com",'form → bank.com/transfer\n_csrf=??? 모름!'],["a-s","bank.com (server)","SESSION 있음\nCSRF token 불일치!\n→ 403 Forbidden"]],"공격자는 CSRF token을 모름. evil.com의 JS가 bank.com DOM을 읽는 건 same-origin policy가 차단. SameSite=None이어도 방어됨!",false,"pb"]
+]];
+let sc=0,c=0;
+function sw(s){sc=s;c=0;document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===s));r();}
+function r(){const steps=S[sc],s=steps[c];const[actors,msg,danger,pc]=s;document.getElementById('actors').innerHTML=actors.map(([cls,name,data])=>cls?`<div class="actor ${cls}"><div class="actor-name">${name}</div><div class="actor-data">${data}</div></div>`:`<div class="actor"><div class="actor-name">${name}</div><div class="actor-data">${data}</div></div>`).join('');document.getElementById('msg').innerHTML=`<div class="msg-desc${danger?' danger':''}">${msg}</div>`;document.getElementById('pills').innerHTML=steps.map((_,i)=>`<div class="pill ${i<=c?pc:''} ${i===c?'cur':''}" onclick="gt(${i})">${i+1}</div>`).join('');document.getElementById('pb').disabled=c===0;document.getElementById('nb').disabled=c===steps.length-1;}
+function g(d){c=Math.max(0,Math.min(S[sc].length-1,c+d));r();}function gt(i){c=i;r();}r();
+</script></body></html>

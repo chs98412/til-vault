@@ -88,6 +88,8 @@ Set-Cookie: SESSION=abc; Domain=.company.com
 - `github.io`, `co.kr` → Public Suffix List에 등록된 eTLD
 - `alice.github.io`와 `bob.github.io`는 cross-site (eTLD+1이 다름)
 
+<iframe src="../_widgets/cookie-samesite-none-problems.html" width="100%" height="480" frameborder="0"></iframe>
+
 ## SameSite=None과 서드파티 쿠키의 한계
 
 `SameSite=None; Secure`로 설정하면 cross-site 요청에도 쿠키가 전달되지만:
@@ -100,6 +102,8 @@ Set-Cookie: SESSION=abc; Domain=.company.com
 SSO에서도 영향: `SameSite=None`으로 SSO 쿠키를 공유하는 방식은 브라우저 정책에 취약 → OIDC 토큰 기반으로 대체.
 
 ## 쿠키 기반 보안 공격과 방어
+
+<iframe src="../_widgets/csrf-attack-defense.html" width="100%" height="480" frameborder="0"></iframe>
 
 ### CSRF (Cross-Site Request Forgery)
 

@@ -50,6 +50,8 @@ HMACSHA256(base64(header) + "." + base64(payload), SECRET_KEY)
 
 **탈취 방어 불가**: 토큰을 통째로 복사하면 서명이 완벽하게 유효. 서버는 탈취된 토큰인지 구분 불가. → JWT의 근본적 한계.
 
+<iframe src="../_widgets/access-refresh-token-flow.html" width="100%" height="520" frameborder="0"></iframe>
+
 ## Access Token + Refresh Token 패턴
 
 ### 왜 필요한가
