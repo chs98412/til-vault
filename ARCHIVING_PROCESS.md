@@ -35,7 +35,7 @@ claude.ai 대화 → "정리해줘" → 파일 다운로드 → ~/personal/til-v
   (핵심 내용. 코드 스니펫 포함)
 
   ## 실무 연결
-  (NHN Commerce 업무에 어떻게 적용되는지)
+  (실무에 어떻게 적용되는지)
 
   ## 위젯
   (있으면 파일명과 설명 목록)
@@ -81,6 +81,7 @@ vault 루트에서 아래 프롬프트로 Claude Code를 실행하세요.
 - 새 파일과 기존 파일의 title, tags, 내용을 비교
 - 중복 판단 기준:
   - 같은 주제를 다루는 기존 문서가 있으면 → APPEND 후보
+  - APPEND 후 문서가 2~3페이지를 초과하면 → SPLIT 후보 (세부 주제별 파일 분리)
   - 완전히 동일한 내용이면 → SKIP 후보
   - 새로운 내용이면 → MOVE 후보
 
@@ -89,21 +90,24 @@ vault 루트에서 아래 프롬프트로 Claude Code를 실행하세요.
   📋 정리 계획:
   - [파일명] → MOVE to /카테고리/ (신규)
   - [파일명] → APPEND to /카테고리/기존파일.md (유사 문서 존재: 기존파일명)
+  - [파일명] → SPLIT: 기존파일.md → 세부파일1.md + 세부파일2.md (내용 과다)
   - [파일명] → SKIP (중복: 기존파일명)
   - [위젯파일명] → MOVE to /_widgets/
 - 내가 확인하면 실행
 
 ## 4. 실행
 - MOVE: 해당 카테고리 폴더로 이동
-- APPEND: 기존 문서 하단에 "---" 구분선 + 날짜 헤더 + 새 내용 추가.
+- APPEND: 기존 문서에 자연스럽게 내용 추가 (중복 없이 이어지도록).
   기존 frontmatter의 tags에 새 태그 병합.
+- SPLIT: 기존 문서 + 새 내용 합쳤을 때 너무 길면 (2~3페이지 초과) 세부 카테고리로 파일 분리.
+  예) session-management.md가 너무 길어지면 → session-lifecycle.md + distributed-session.md + spring-session-redis.md
 - SKIP: _inbox에서 삭제
 - .html 위젯: _widgets/ 폴더로 이동
-- .md 안의 위젯 경로가 올바른지 확인 (../_widgets/파일명.html)
+- .md 안에 위젯을 iframe으로 임베드 (../_widgets/파일명.html)
 
 ## 5. 완료 보고
   ✅ 정리 완료:
-  - 신규 N개, 병합 N개, 스킵 N개
+  - 신규 N개, 병합 N개, 분리 N개, 스킵 N개
   - 위젯 N개 이동
   - 변경된 파일 목록
 ```
