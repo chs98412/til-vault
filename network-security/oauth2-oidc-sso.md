@@ -145,6 +145,8 @@ Spring Security에서 `issuer-uri`만 설정하면 나머지를 자동으로 가
 
 "쿠키 체이닝이 불가능해서 쿠키를 안 쓴다" = 서비스 간 인증 전달에 쿠키를 안 쓰는 것. 각 서비스 내부에서는 여전히 쿠키로 세션 유지.
 
+<iframe src="../_widgets/oidc-sso-flow-simulation.html" width="100%" height="520" frameborder="0"></iframe>
+
 ## Keycloak 핵심 개념
 
 ### Core

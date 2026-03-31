@@ -94,6 +94,8 @@ JWT는 즉시 무효화가 불가능하므로, Access Token TTL을 짧게(15분)
 - 어느 쪽이든 결국 감지됨. 단, 공격자가 먼저 쓰면 그 사이에 활동 가능 → **완벽한 방어가 아닌 피해 최소화 전략**
 - 1차 방어선은 HttpOnly 쿠키로 XSS 탈취 자체를 방지하는 것
 
+<iframe src="../_widgets/jwt-signature-verification.html" width="100%" height="520" frameborder="0"></iframe>
+
 ## 로컬스토리지 vs HttpOnly 쿠키에 토큰 저장
 
 | | 로컬스토리지 | HttpOnly 쿠키 |

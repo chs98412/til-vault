@@ -55,6 +55,8 @@ session.setAttribute("role", "ADMIN");
 - 전송 방식: UDP 멀티캐스트(클라우드에서 대부분 미지원) 또는 TCP 유니캐스트.
 - Kubernetes에서 문제: Pod IP가 유동적, 멀티캐스트 불가, Pod 증가 시 동기화 트래픽 급증.
 
+<iframe src="../_widgets/distributed-session-strategies.html" width="100%" height="480" frameborder="0"></iframe>
+
 ## Spring Session + Redis/Valkey
 
 ### 핵심 원리
