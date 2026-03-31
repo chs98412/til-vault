@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JWT Signature Verification</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:720px;margin:0 auto;padding:20px;color:#1a1a1a;background:#fff}
+h2{font-size:18px;font-weight:600;margin:0 0 16px}
+.tabs{display:flex;gap:0;margin:0 0 16px;border:1px solid #e5e5e5;border-radius:8px;overflow:hidden}
+.tab{flex:1;padding:10px 8px;font-size:12px;text-align:center;cursor:pointer;background:#fff;color:#666;border:none}
+.tab.active{font-weight:600}
+.tab.t0.active{background:#E1F5EE;color:#085041}
+.tab.t1.active{background:#FCEBEB;color:#791F1F}
+.tab.t2.active{background:#FAEEDA;color:#633806}
+.parts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:0 0 16px}
+.part{border:1px solid #e5e5e5;border-radius:12px;padding:10px 12px}
+.part.p-h{border-color:#534AB7}
+.part.p-p{border-color:#0F6E56}
+.part.p-s{border-color:#BA7517}
+.part.tampered{border-color:#A32D2D;background:#FCEBEB}
+.part.valid{background:#E1F5EE}
+.part-title{font-size:11px;font-weight:600;margin:0 0 6px}
+.c-h{color:#534AB7}.c-p{color:#0F6E56}.c-s{color:#BA7517}.c-r{color:#A32D2D}
+.part-body{font-size:11px;font-family:monospace;color:#666;line-height:1.6;white-space:pre-wrap}
+.verify{border:1px solid #e5e5e5;border-radius:12px;padding:14px;margin:0 0 16px}
+.verify.pass{border-color:#0F6E56;background:#E1F5EE}
+.verify.fail{border-color:#A32D2D;background:#FCEBEB}
+.verify-title{font-size:13px;font-weight:600;margin:0 0 6px}
+.t-pass{color:#085041}.t-fail{color:#791F1F}.t-warn{color:#633806}
+.verify-steps{font-size:12px;color:#555;line-height:1.7}
+.step-ok{color:#085041}.step-fail{color:#791F1F;font-weight:600}.step-warn{color:#633806;font-weight:600}
+.msg-area{border:1px solid #e5e5e5;border-radius:12px;padding:14px;margin:0 0 14px}
+.msg-desc{font-size:13px;line-height:1.7;color:#555}
+.controls{display:flex;align-items:center;gap:12px}
+.step-pills{display:flex;gap:6px;flex:1}
+.pill{width:26px;height:26px;border-radius:50%;border:1px solid #ddd;display:flex;align-items:center;justify-content:center;font-size:11px;color:#999;cursor:pointer;background:#fff}
+.pill.pg{background:#E1F5EE;color:#085041;border-color:#0F6E56}
+.pill.pr{background:#FCEBEB;color:#791F1F;border-color:#A32D2D}
+.pill.pa{background:#FAEEDA;color:#633806;border-color:#BA7517}
+.pill.cur{font-weight:700}
+button{padding:6px 14px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-size:12px}
+button:disabled{opacity:.3}
+</style>
+</head>
+<body>
+<h2>JWT Signature Verification</h2>
+<div class="tabs">
+<div class="tab t0 active" onclick="sw(0)">Valid JWT</div>
+<div class="tab t1" onclick="sw(1)">Payload tampering</div>
+<div class="tab t2" onclick="sw(2)">Token stolen</div>
+</div>
+<div class="parts" id="parts"></div>
+<div class="verify" id="vbox"><div class="verify-title" id="vt"></div><div class="verify-steps" id="vs"></div></div>
+<div class="msg-area" id="msg"></div>
+<div class="controls"><div class="step-pills" id="pills"></div><button onclick="g(-1)" id="pb">Prev</button><button onclick="g(1)" id="nb">Next</button></div>
+<script>
+const S=[
+[[{parts:[{t:"Header",c:"p-h",tc:"c-h",b:'{\n  "alg": "HS256",\n  "typ": "JWT"\n}'},{t:"Payload",c:"p-p",tc:"c-p",b:'{\n  "user": "혁순",\n  "role": "USER",\n  "exp": 1711872000\n}'},{t:"Signature",c:"p-s",tc:"c-s",b:'HMACSHA256(\n  header+"."+payload,\n  SECRET_KEY\n)'}],vb:"",vt:"",vs:"",msg:"서버가 발급한 정상 JWT. Header와 Payload는 Base64 인코딩일 뿐 암호화가 아님.",pc:"pg"},{parts:[{t:"Header",c:"p-h",tc:"c-h",b:'{ "alg": "HS256" }'},{t:"Payload",c:"p-p valid",tc:"c-p",b:'{\n  "user": "혁순",\n  "role": "USER"\n}'},{t:"Signature",c:"p-s valid",tc:"c-s",b:'재계산 == 토큰 서명\n→ 일치!'}],vb:"pass",vt:"Signature: PASS",vtc:"t-pass",vs:'<span class="step-ok">1. SECRET_KEY로 서명 재계산</span><br><span class="step-ok">2. 계산된 서명 == 토큰 서명 → 일치!</span><br><span class="step-ok">3. exp 확인 → 만료 전 → 유효!</span>',msg:"서버가 SECRET_KEY로 서명을 재계산해서 비교. 일치하면 DB/Redis 조회 없이 인증 완료!",pc:"pg"}],
+[{parts:[{t:"Header",c:"p-h",tc:"c-h",b:'{ "alg": "HS256" }'},{t:"Payload (original)",c:"p-p",tc:"c-p",b:'{\n  "role": "USER" ← 이걸 바꿔보자\n}'},{t:"Signature (original)",c:"p-s",tc:"c-s",b:'(정상 서명)'}],vb:"",vt:"",vs:"",msg:"공격자가 role을 USER에서 ADMIN으로 변조 시도.",pc:"pr"},{parts:[{t:"Header",c:"p-h",tc:"c-h",b:'{ "alg": "HS256" }'},{t:"Payload (TAMPERED)",c:"p-p tampered",tc:"c-r",b:'{\n  "role": "ADMIN" ← 변조!\n}'},{t:"Signature (original)",c:"p-s",tc:"c-s",b:'(원래 서명 그대로)'}],vb:"",vt:"",vs:"",msg:"Payload를 변조했지만 서명은 그대로. SECRET_KEY를 모르니 새 서명을 못 만듦.",pc:"pr"},{parts:[{t:"Header",c:"p-h",tc:"c-h",b:'{ "alg": "HS256" }'},{t:"Payload (TAMPERED)",c:"p-p tampered",tc:"c-r",b:'{ "role": "ADMIN" }'},{t:"Signature (MISMATCH)",c:"p-s tampered",tc:"c-r",b:'expected: x8kQ2m...\nactual: dG9rZW...\n→ MISMATCH!'}],vb:"fail",vt:"Signature: FAIL",vtc:"t-fail",vs:'<span class="step-ok">1. SECRET_KEY로 서명 재계산</span><br><span class="step-fail">2. 계산 서명 ≠ 토큰 서명 → 불일치!</span><br><span class="step-fail">3. → 401 Unauthorized</span>',msg:"1글자만 바뀌어도 서명이 완전히 달라짐. 변조 즉시 감지!",pc:"pr"}],
+[{parts:[{t:"Header",c:"p-h",tc:"c-h",b:'{ "alg": "HS256" }'},{t:"Payload",c:"p-p",tc:"c-p",b:'{ "user": "혁순",\n  "role": "USER" }'},{t:"Signature (valid!)",c:"p-s valid",tc:"c-s",b:'(정상 서명 — 변조 없음)'}],vb:"pass",vt:"Signature: VALID",vtc:"t-pass",vs:'<span class="step-ok">서명 유효, 만료 전</span>',msg:"공격자가 XSS로 토큰을 통째로 탈취. 변조가 아니라 복사한 것이라 서명은 완벽히 유효!",pc:"pa"},{parts:[{t:"Header",c:"p-h",tc:"c-h",b:'{ "alg": "HS256" }'},{t:"Payload",c:"p-p",tc:"c-p",b:'{ "user": "혁순" }'},{t:"Signature",c:"p-s valid",tc:"c-s",b:'(유효 — 서버가 수용)'}],vb:"pass",vt:"Server accepts it!",vtc:"t-warn",vs:'<span class="step-ok">서명 유효 ✓</span><br><span class="step-warn">→ 서버는 탈취된 토큰인지 알 수 없음</span><br><span class="step-warn">→ 만료까지 공격자가 사용 가능</span>',msg:"JWT의 근본적 한계: 변조는 막지만, 탈취는 못 막는다. 세션이었으면 즉시 무효화 가능.",pc:"pa"},{parts:[{t:"세션이었다면",c:"p-p valid",tc:"c-p",b:'session.invalidate()\n→ Redis에서 즉시 삭제\n→ 탈취된 ID로 요청해도 거부'},{t:"JWT의 현실",c:"p-p tampered",tc:"c-r",b:'만료 전까지 무효화 불가\n\n해결: Redis 블랙리스트\n→ 결국 stateful'},{t:"Access+Refresh 패턴",c:"p-s",tc:"c-s",b:'Access: 15분 (짧은 TTL)\nRefresh: 7일 (Redis 저장)\n→ 피해 최소화'}],vb:"fail",vt:"JWT 한계: 즉시 무효화 불가",vtc:"t-warn",vs:'<span class="step-warn">탈취 시 Access Token은 15분간 유효</span><br><span class="step-warn">Refresh Token은 Redis에서 무효화 가능</span><br><span class="step-warn">Rotation + Reuse Detection으로 감지</span>',msg:"실무: Access TTL 짧게 + Refresh Token을 Redis에 저장 + Rotation으로 탈취 감지. 완벽한 방어가 아닌 피해 최소화 전략.",pc:"pa"}]
+];
+let sc=0,c=0;
+function sw(s){sc=s;c=0;document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===s));r();}
+function r(){const steps=S[sc],s=steps[c];document.getElementById('parts').innerHTML=s.parts.map(p=>`<div class="part ${p.c}"><div class="part-title ${p.tc}">${p.t}</div><div class="part-body">${p.b}</div></div>`).join('');const vb=document.getElementById('vbox');vb.className='verify'+(s.vb?' '+s.vb:'');document.getElementById('vt').className='verify-title '+(s.vtc||'');document.getElementById('vt').textContent=s.vt||'';document.getElementById('vs').innerHTML=s.vs||'';vb.style.display=s.vt?'block':'none';document.getElementById('msg').innerHTML=`<div class="msg-desc">${s.msg}</div>`;document.getElementById('pills').innerHTML=steps.map((_,i)=>`<div class="pill ${i<=c?s.pc:''} ${i===c?'cur':''}" onclick="gt(${i})">${i+1}</div>`).join('');document.getElementById('pb').disabled=c===0;document.getElementById('nb').disabled=c===steps.length-1;}
+function g(d){c=Math.max(0,Math.min(S[sc].length-1,c+d));r();}
+function gt(i){c=i;r();}
+r();
+</script>
+</body>
+</html>

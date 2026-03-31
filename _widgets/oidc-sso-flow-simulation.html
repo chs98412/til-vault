@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OIDC SSO Flow Simulation</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:720px;margin:0 auto;padding:20px;color:#1a1a1a;background:#fff}
+.actors{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:0 0 16px}
+.actor{border:1px solid #e5e5e5;border-radius:12px;padding:12px;min-height:140px;transition:all .3s}
+.actor.active{border-color:#185FA5;background:#E6F1FB}
+.actor-name{font-size:13px;font-weight:600;margin:0 0 4px}
+.actor-domain{font-size:11px;font-family:monospace;color:#666;margin:0 0 10px}
+.cookie-label{font-size:11px;color:#999;margin:0 0 4px}
+.cookie{display:inline-block;padding:3px 8px;border-radius:4px;font-size:11px;font-family:monospace;margin:2px 0}
+.cookie-auth{background:#EEEDFE;color:#3C3489}
+.cookie-svc{background:#E1F5EE;color:#085041}
+.cookie-none{color:#999;font-style:italic;font-family:inherit}
+.msg-area{border:1px solid #e5e5e5;border-radius:12px;padding:16px;margin:0 0 16px;min-height:90px}
+.msg-desc{font-size:13px;color:#555;line-height:1.6}
+.controls{display:flex;align-items:center;gap:12px}
+.step-pills{display:flex;gap:6px;flex:1}
+.pill{width:28px;height:28px;border-radius:50%;border:1px solid #ddd;display:flex;align-items:center;justify-content:center;font-size:12px;color:#999;cursor:pointer;background:#fff;transition:all .2s}
+.pill.done{background:#E1F5EE;color:#085041;border-color:#0F6E56}
+.pill.current{background:#EEEDFE;color:#3C3489;border-color:#534AB7;font-weight:700}
+.pill:hover{border-color:#999}
+button{padding:8px 16px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-size:13px}
+button:hover{background:#f5f5f5}
+button:disabled{opacity:.3;cursor:default}
+.url-bar{display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid #e5e5e5;border-radius:8px;margin:0 0 16px;background:#f9f9f9}
+.url-text{font-size:12px;font-family:monospace;color:#666}
+.url-text b{color:#1a1a1a}
+h2{font-size:18px;font-weight:600;margin:0 0 16px}
+</style>
+</head>
+<body>
+<h2>OIDC SSO Flow Simulation</h2>
+<div class="url-bar"><div class="url-text" id="urlBar"></div></div>
+<div class="actors">
+<div class="actor" id="a-browser"><div class="actor-name">Browser</div><div class="actor-domain">cookie jar</div><div class="cookie-label">cookie jar:</div><div id="cb"></div></div>
+<div class="actor" id="a-service"><div class="actor-name">service-a.com</div><div class="actor-domain">service server</div><div class="cookie-label">received cookies:</div><div id="cs"></div></div>
+<div class="actor" id="a-auth"><div class="actor-name">auth.company.com</div><div class="actor-domain">Keycloak SSO</div><div class="cookie-label">received cookies:</div><div id="ca"></div></div>
+</div>
+<div class="msg-area" id="msgArea"></div>
+<div class="controls"><div class="step-pills" id="pills"></div><button id="pb" onclick="go(-1)">Prev</button><button id="nb" onclick="go(1)">Next</button></div>
+<script>
+const steps=[
+{url:"service-a.com/dashboard",active:["a-browser","a-service"],bc:[],sc:[],ac:[],arrows:[{desc:"브라우저가 service-a.com에 접속. service-a.com 도메인에 세션 쿠키가 없으므로 요청에 쿠키가 안 붙어요."}]},
+{url:"service-a.com → 302 Redirect",active:["a-service"],bc:[],sc:[{n:"없음",t:"none"}],ac:[],arrows:[{desc:"service-a.com 서버: \"이 사람 누구지 모르겠네.\" 쿠키가 없으니 식별할 수단이 없습니다. SSO 서버로 리다이렉트."}]},
+{url:"auth.company.com/authorize",active:["a-browser","a-auth"],bc:[],sc:[],ac:[{n:"없음",t:"none"}],arrows:[{desc:"브라우저가 auth.company.com으로 이동. 아직 로그인 전이라 auth 도메인에도 쿠키가 없어요."}]},
+{url:"auth.company.com/login",active:["a-browser","a-auth"],bc:[{n:"AUTH_SESSION=abc123",t:"auth",d:"auth.company.com"}],sc:[],ac:[],arrows:[{desc:"사용자가 로그인합니다. auth.company.com이 자기 도메인에 세션 쿠키를 만들어요. 이건 auth 도메인 전용."}]},
+{url:"auth.company.com → 302 + code",active:["a-auth"],bc:[{n:"AUTH_SESSION=abc123",t:"auth",d:"auth.company.com"}],sc:[],ac:[{n:"AUTH_SESSION=abc123",t:"auth"}],arrows:[{desc:"auth 서버가 authorization code를 URL 파라미터로 담아 service-a.com으로 리다이렉트. 쿠키가 아니라 URL로 전달!"}]},
+{url:"service-a.com/callback?code=XYZ",active:["a-service","a-auth"],bc:[{n:"AUTH_SESSION=abc123",t:"auth",d:"auth.company.com"}],sc:[],ac:[],arrows:[{desc:"service-a.com 서버가 백채널로 auth 서버에 code를 보내서 토큰을 교환합니다. 서버 간 통신이라 브라우저/쿠키와 무관!"}]},
+{url:"service-a.com/dashboard",active:["a-browser","a-service"],bc:[{n:"AUTH_SESSION=abc123",t:"auth",d:"auth.company.com"},{n:"SVC_SESSION=xyz789",t:"svc",d:"service-a.com"}],sc:[{n:"SVC_SESSION=xyz789",t:"svc"}],ac:[],arrows:[{desc:"service-a.com이 자기 도메인에 자기만의 세션 쿠키를 발급! 이제부터 auth 서버 없이 독립적으로 사용자를 식별할 수 있어요."}]},
+{url:"service-a.com/settings",active:["a-browser","a-service"],bc:[{n:"AUTH_SESSION=abc123",t:"auth",d:"auth.company.com"},{n:"SVC_SESSION=xyz789",t:"svc",d:"service-a.com"}],sc:[{n:"SVC_SESSION=xyz789",t:"svc"}],ac:[],arrows:[{desc:"이제 사용자가 service-a.com 내에서 페이지를 이동해도 SVC_SESSION 쿠키가 자동으로 붙습니다. auth 서버에 물어볼 필요 없어요!"}]}
+];
+let cur=0;
+function render(){const s=steps[cur];document.getElementById('urlBar').innerHTML=s.url.replace(/(service-a\.com|auth\.company\.com)/g,'<b>$1</b>');document.querySelectorAll('.actor').forEach(a=>a.classList.remove('active'));s.active.forEach(id=>document.getElementById(id).classList.add('active'));document.getElementById('cb').innerHTML=s.bc.length?s.bc.map(c=>`<div class="cookie cookie-${c.t}">${c.n} <span style="font-size:10px;opacity:.7">(${c.d})</span></div>`).join(''):'<div class="cookie cookie-none">empty</div>';document.getElementById('cs').innerHTML=s.sc.length?s.sc.map(c=>c.t==='none'?`<div class="cookie cookie-none">${c.n}</div>`:`<div class="cookie cookie-${c.t}">${c.n}</div>`).join(''):'<div class="cookie cookie-none">—</div>';document.getElementById('ca').innerHTML=s.ac.length?s.ac.map(c=>c.t==='none'?`<div class="cookie cookie-none">${c.n}</div>`:`<div class="cookie cookie-${c.t}">${c.n}</div>`).join(''):'<div class="cookie cookie-none">—</div>';document.getElementById('msgArea').innerHTML=s.arrows.map(a=>`<div class="msg-desc">${a.desc}</div>`).join('');document.getElementById('pills').innerHTML=steps.map((_,i)=>`<div class="pill ${i<cur?'done':i===cur?'current':''}" onclick="goTo(${i})">${i+1}</div>`).join('');document.getElementById('pb').disabled=cur===0;document.getElementById('nb').disabled=cur===steps.length-1;}
+function go(d){cur=Math.max(0,Math.min(steps.length-1,cur+d));render();}
+function goTo(i){cur=i;render();}
+render();
+</script>
+</body>
+</html>

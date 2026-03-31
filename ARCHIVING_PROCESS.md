@@ -141,6 +141,7 @@ til-vault/
 | infra | K8s, Docker, Valkey/Redis, CI/CD |
 | architecture | 설계 패턴, 시스템 아키텍처, DDD |
 | ai-tooling | Claude, MCP, AI IDE, 프롬프팅, RAG |
+| network-security | 쿠키, 세션, JWT, OAuth2, OIDC, SSO, CORS, CSRF |
 | misc | 위 카테고리에 안 맞는 것들 |
 
 서브폴더 예시: `infra/k8s/`, `db-internals/mysql/`, `architecture/ddd/`
