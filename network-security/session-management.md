@@ -35,7 +35,7 @@ session.setAttribute("role", "ADMIN");
 - 타임아웃: 30분간 요청 없으면 백그라운드 스레드가 정리
 - 서버 재시작: 메모리의 세션 전부 유실 → **분산 환경 문제의 시작점**
 
-<iframe src="../_widgets/session-lifecycle.html" width="100%" height="520" frameborder="0"></iframe>
+> [위젯: 세션 라이프사이클 시뮬레이션](../_widgets/session-lifecycle.html)
 
 ## 분산 환경에서의 세션 문제
 
@@ -57,11 +57,11 @@ session.setAttribute("role", "ADMIN");
 - 전송 방식: UDP 멀티캐스트(클라우드에서 대부분 미지원) 또는 TCP 유니캐스트.
 - Kubernetes에서 문제: Pod IP가 유동적, 멀티캐스트 불가, Pod 증가 시 동기화 트래픽 급증.
 
-<iframe src="../_widgets/distributed-session-strategies.html" width="100%" height="480" frameborder="0"></iframe>
+> [위젯: 분산 세션 전략 비교](../_widgets/distributed-session-strategies.html)
 
 ## Spring Session + Redis/Valkey
 
-<iframe src="../_widgets/spring-session-redis-internals.html" width="100%" height="480" frameborder="0"></iframe>
+> [위젯: Spring Session + Redis 내부 동작](../_widgets/spring-session-redis-internals.html)
 
 ### 핵심 원리
 

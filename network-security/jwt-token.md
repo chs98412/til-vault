@@ -50,7 +50,7 @@ HMACSHA256(base64(header) + "." + base64(payload), SECRET_KEY)
 
 **탈취 방어 불가**: 토큰을 통째로 복사하면 서명이 완벽하게 유효. 서버는 탈취된 토큰인지 구분 불가. → JWT의 근본적 한계.
 
-<iframe src="../_widgets/access-refresh-token-flow.html" width="100%" height="520" frameborder="0"></iframe>
+> [위젯: Access + Refresh Token 흐름](../_widgets/access-refresh-token-flow.html)
 
 ## Access Token + Refresh Token 패턴
 
@@ -96,7 +96,7 @@ JWT는 즉시 무효화가 불가능하므로, Access Token TTL을 짧게(15분)
 - 어느 쪽이든 결국 감지됨. 단, 공격자가 먼저 쓰면 그 사이에 활동 가능 → **완벽한 방어가 아닌 피해 최소화 전략**
 - 1차 방어선은 HttpOnly 쿠키로 XSS 탈취 자체를 방지하는 것
 
-<iframe src="../_widgets/jwt-signature-verification.html" width="100%" height="520" frameborder="0"></iframe>
+> [위젯: JWT 서명 검증 시뮬레이션](../_widgets/jwt-signature-verification.html)
 
 ## 로컬스토리지 vs HttpOnly 쿠키에 토큰 저장
 

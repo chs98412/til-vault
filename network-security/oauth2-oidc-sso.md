@@ -20,7 +20,7 @@ related: [cookie-deep-dive, session-management, jwt-token]
 - 인증 없이 인가는 의미 없음 (누군지 모르는데 권한 줄 수 없음)
 - OAuth2는 원래 인가만 담당. 인증이 필요해서 OIDC가 OAuth2 위에 추가됨.
 
-<iframe src="../_widgets/authn-vs-authz.html" width="100%" height="480" frameborder="0"></iframe>
+> [위젯: 인증 vs 인가 비교](../_widgets/authn-vs-authz.html)
 
 ## OAuth2가 해결하는 문제
 
@@ -79,7 +79,7 @@ OAuth2: **비밀번호를 공유하지 않고, 필요한 권한만 위임**. `sc
 | PKCE `code_verifier/challenge` | authorization code 탈취 시에도 토큰 발급 방지. `code_verifier`를 모르면 code로 토큰 교환 불가 |
 | 백채널 토큰 교환 | 브라우저를 거치지 않는 서버 간 통신으로 토큰 노출 방지 |
 
-<iframe src="../_widgets/oauth2-oidc-flow.html" width="100%" height="520" frameborder="0"></iframe>
+> [위젯: OAuth2 + OIDC 흐름](../_widgets/oauth2-oidc-flow.html)
 
 ## OIDC가 OAuth2에 추가하는 것
 
@@ -131,7 +131,7 @@ Spring Security에서 `issuer-uri`만 설정하면 나머지를 자동으로 가
 
 ## 크로스도메인 SSO와 OIDC
 
-<iframe src="../_widgets/subdomain-cookie-sso.html" width="100%" height="480" frameborder="0"></iframe>
+> [위젯: 서브도메인 쿠키 공유 SSO](../_widgets/subdomain-cookie-sso.html)
 
 ### 왜 쿠키로 SSO가 안 되는가 (도메인이 다를 때)
 
@@ -151,7 +151,7 @@ Spring Security에서 `issuer-uri`만 설정하면 나머지를 자동으로 가
 
 "쿠키 체이닝이 불가능해서 쿠키를 안 쓴다" = 서비스 간 인증 전달에 쿠키를 안 쓰는 것. 각 서비스 내부에서는 여전히 쿠키로 세션 유지.
 
-<iframe src="../_widgets/oidc-sso-flow-simulation.html" width="100%" height="520" frameborder="0"></iframe>
+> [위젯: OIDC SSO 흐름 시뮬레이션](../_widgets/oidc-sso-flow-simulation.html)
 
 ## Keycloak 핵심 개념
 
